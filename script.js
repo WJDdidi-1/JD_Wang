@@ -6,6 +6,7 @@ async function getVisitorInfo() {
         document.getElementById('visitor-ip').textContent = data.ip;
         addVisitorMarker(data.latitude, data.longitude, data.ip);
         saveVisitor(data);
+        updateVisitorStats();
     } catch (error) {
         console.error('Error fetching visitor info:', error);
         document.getElementById('visitor-ip').textContent = 'Unable to fetch IP';
@@ -26,19 +27,56 @@ function addVisitorMarker(lat, lon, ip) {
 // 保存访客信息
 function saveVisitor(data) {
     let visitors = JSON.parse(localStorage.getItem('visitors') || '[]');
-    visitors.push({
-        ip: data.ip,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        timestamp: new Date().toISOString()
-    });
+    const existingVisitor = visitors.find(v => v.ip === data.ip);
+    if (!existingVisitor) {
+        visitors.push({
+            ip: data.ip,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            country: data.country_name,
+            visits: 1,
+            firstVisit: new Date().toISOString(),
+            lastVisit: new Date().toISOString()
+        });
+    } else {
+        existingVisitor.visits++;
+        existingVisitor.lastVisit = new Date().toISOString();
+    }
     localStorage.setItem('visitors', JSON.stringify(visitors));
-    updateVisitCount(visitors.length);
 }
 
 // 更新访问计数
-function updateVisitCount(count) {
-    document.getElementById('visit-count').textContent = count;
+async function updateVisitCount() {
+    try {
+        const response = await fetch('https://api.countapi.xyz/hit/jiandi-wang-personal-website/visits');
+        const data = await response.json();
+        document.getElementById('visit-count').textContent = data.value;
+    } catch (error) {
+        console.error('Error updating visit count:', error);
+        document.getElementById('visit-count').textContent = 'Unable to fetch count';
+    }
+}
+
+// 更新访客统计信息
+function updateVisitorStats() {
+    const visitors = JSON.parse(localStorage.getItem('visitors') || '[]');
+    const uniqueVisitors = visitors.length;
+    const totalVisits = visitors.reduce((sum, visitor) => sum + visitor.visits, 0);
+    const countryDistribution = visitors.reduce((acc, visitor) => {
+        acc[visitor.country] = (acc[visitor.country] || 0) + 1;
+        return acc;
+    }, {});
+
+    document.getElementById('unique-visitors').textContent = uniqueVisitors;
+    document.getElementById('total-visits').textContent = totalVisits;
+
+    const countryList = document.getElementById('country-distribution');
+    countryList.innerHTML = '';
+    Object.entries(countryDistribution).forEach(([country, count]) => {
+        const li = document.createElement('li');
+        li.textContent = `${country}: ${count}`;
+        countryList.appendChild(li);
+    });
 }
 
 // 加载所有访客标记
@@ -47,7 +85,7 @@ function loadAllVisitors() {
     visitors.forEach(visitor => {
         addVisitorMarker(visitor.latitude, visitor.longitude, visitor.ip);
     });
-    updateVisitCount(visitors.length);
+    updateVisitorStats();
 }
 
 // 处理联系表单提交
@@ -66,6 +104,7 @@ function handleContactForm() {
 window.addEventListener('load', function() {
     initMap();
     getVisitorInfo();
+    updateVisitCount();
     loadAllVisitors();
     handleContactForm();
 });
