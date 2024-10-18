@@ -119,3 +119,66 @@ function initMap() {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 }
+
+// 在文件开头添加这些变量
+let visitorIp = '';
+let yourVisits = 0;
+let totalVisits = 0;
+let uniqueVisitors = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取访问者IP
+    fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+            visitorIp = data.ip;
+            document.getElementById('visitor-ip').textContent = visitorIp;
+            updateVisitorStats();
+        });
+
+    // 更新访问统计
+    function updateVisitorStats() {
+        // 从localStorage获取当前访问者的访问次数
+        yourVisits = parseInt(localStorage.getItem(visitorIp) || '0');
+        yourVisits++;
+        localStorage.setItem(visitorIp, yourVisits);
+        document.getElementById('your-visits').textContent = yourVisits;
+
+        // 更新服务器端的访问统计
+        fetch('/api/updateStats', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ip: visitorIp }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            totalVisits = data.totalVisits;
+            uniqueVisitors = data.uniqueVisitors;
+            document.getElementById('total-visits').textContent = totalVisits;
+            document.getElementById('unique-visitors').textContent = uniqueVisitors;
+
+            // 更新国家分布和地图
+            updateCountryDistribution(data.countryDistribution);
+            updateVisitorMap(data.visitorLocations);
+        });
+    }
+
+    // 更新国家分布列表
+    function updateCountryDistribution(distribution) {
+        const list = document.getElementById('country-distribution');
+        list.innerHTML = '';
+        for (const [country, count] of Object.entries(distribution)) {
+            const li = document.createElement('li');
+            li.textContent = `${country}: ${count}`;
+            list.appendChild(li);
+        }
+    }
+
+    // 更新访问者地图
+    function updateVisitorMap(locations) {
+        // 实现地图更新逻辑
+        // 这里需要使用Leaflet.js来更新地图
+    }
+});
