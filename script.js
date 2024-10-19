@@ -1,17 +1,21 @@
-// 获取访客IP地址和地理位置
+// 获取访客地理位置信息
 async function getVisitorInfo() {
     try {
         const response = await fetch('https://ipapi.co/json/');
         const data = await response.json();
-        document.getElementById('visitor-ip').textContent = data.ip;
+        document.getElementById('visitor-location').textContent = `${data.city}, ${data.country_name}`;
+        document.getElementById('visitor-latitude').textContent = data.latitude;
+        document.getElementById('visitor-longitude').textContent = data.longitude;
         updateTotalVisits();
     } catch (error) {
         console.error('Error fetching visitor info:', error);
-        document.getElementById('visitor-ip').textContent = 'Unable to fetch IP';
+        document.getElementById('visitor-location').textContent = 'Unable to fetch location';
+        document.getElementById('visitor-latitude').textContent = 'N/A';
+        document.getElementById('visitor-longitude').textContent = 'N/A';
     }
 }
 
-// 添加新的 updateTotalVisits 函数
+// 更新总访问次数
 async function updateTotalVisits() {
     try {
         const response = await fetch('https://api.countapi.xyz/hit/jiandi-wang-personal-website/visits');
