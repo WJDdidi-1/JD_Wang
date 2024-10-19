@@ -22,7 +22,6 @@ function initFirebase() {
         console.log("Firebase initialized");
         database.ref().once('value').then(snapshot => {
             console.log("Connected to Firebase database");
-            // 在成功连接到 Firebase 后初始化其他功能
             getVisitorInfo();
         }).catch(error => {
             console.error("Error connecting to Firebase:", error);
@@ -152,8 +151,38 @@ function handleContactForm() {
 }
 
 // 页面加载完成后执行
-window.addEventListener('load', function() {
-    console.log("Page loaded, initializing...");
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM loaded, initializing...");
     initFirebase();
     handleContactForm();
 });
+
+// 在文件开头添加这个函数
+function loadFirebaseScripts(callback) {
+    const scripts = [
+        'https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js',
+        'https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js'
+    ];
+    let loaded = 0;
+    scripts.forEach(src => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => {
+            loaded++;
+            if (loaded === scripts.length) {
+                callback();
+            }
+        };
+        document.head.appendChild(script);
+    });
+}
+
+// 修改 window.onload
+window.onload = function() {
+    console.log("Window loaded, loading Firebase scripts...");
+    loadFirebaseScripts(() => {
+        console.log("Firebase scripts loaded, initializing...");
+        initFirebase();
+        handleContactForm();
+    });
+};
