@@ -20,9 +20,20 @@ function initFirebase() {
         firebase.initializeApp(firebaseConfig);
         database = firebase.database();
         console.log("Firebase initialized");
-        getVisitorInfo();
+        database.ref().once('value')
+            .then(() => {
+                console.log("Successfully connected to Firebase");
+                getVisitorInfo();
+            })
+            .catch(error => {
+                console.error("Error connecting to Firebase:", error);
+                // 即使连接失败，也尝试获取访客信息
+                getVisitorInfo();
+            });
     } else {
         console.error("Firebase is not defined. Make sure the Firebase scripts are loaded correctly.");
+        // 即使 Firebase 未定义，也尝试获取访客信息
+        getVisitorInfo();
     }
 }
 
@@ -51,19 +62,23 @@ async function getVisitorInfo() {
 // 保存访客信息到 Firebase
 function saveVisitor(data) {
     console.log("Attempting to save visitor data:", data);
-    const visitorRef = database.ref('visitors').push();
-    visitorRef.set({
-        ip: data.ip,
-        city: data.city,
-        country: data.country_name,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        timestamp: firebase.database.ServerValue.TIMESTAMP
-    }).then(() => {
-        console.log("Visitor data saved successfully");
-    }).catch(error => {
-        console.error("Error saving visitor data:", error);
-    });
+    if (database) {
+        const visitorRef = database.ref('visitors').push();
+        visitorRef.set({
+            ip: data.ip,
+            city: data.city,
+            country: data.country_name,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+            console.log("Visitor data saved successfully");
+        }).catch(error => {
+            console.error("Error saving visitor data:", error);
+        });
+    } else {
+        console.error("Database is not initialized. Unable to save visitor data.");
+    }
 }
 
 // 初始化地图
@@ -79,30 +94,34 @@ function initMap(lat, lon) {
 // 从 Firebase 加载所有访客并在地图上标注
 function loadVisitors() {
     console.log("Attempting to load visitors...");
-    database.ref('visitors').on('value', (snapshot) => {
-        const visitors = snapshot.val();
-        console.log("Loaded visitors:", visitors);
-        if (visitors) {
-            updateTotalVisits(Object.keys(visitors).length);
-            
-            // 清除现有标记
-            markers.forEach(marker => map.removeLayer(marker));
-            markers = [];
+    if (database) {
+        database.ref('visitors').on('value', (snapshot) => {
+            const visitors = snapshot.val();
+            console.log("Loaded visitors:", visitors);
+            if (visitors) {
+                updateTotalVisits(Object.keys(visitors).length);
+                
+                // 清除现有标记
+                markers.forEach(marker => map.removeLayer(marker));
+                markers = [];
 
-            // 添加新标记
-            for (let id in visitors) {
-                const visitor = visitors[id];
-                const marker = L.marker([visitor.latitude, visitor.longitude]).addTo(map);
-                marker.bindPopup(`Visitor from ${visitor.city}, ${visitor.country}`);
-                markers.push(marker);
+                // 添加新标记
+                for (let id in visitors) {
+                    const visitor = visitors[id];
+                    const marker = L.marker([visitor.latitude, visitor.longitude]).addTo(map);
+                    marker.bindPopup(`Visitor from ${visitor.city}, ${visitor.country}`);
+                    markers.push(marker);
+                }
+            } else {
+                console.log("No visitors data found");
+                updateTotalVisits(0);
             }
-        } else {
-            console.log("No visitors data found");
-            updateTotalVisits(0);
-        }
-    }, (error) => {
-        console.error("Error loading visitors:", error);
-    });
+        }, (error) => {
+            console.error("Error loading visitors:", error);
+        });
+    } else {
+        console.error("Database is not initialized. Unable to load visitors.");
+    }
 }
 
 // 更新总访问次数
