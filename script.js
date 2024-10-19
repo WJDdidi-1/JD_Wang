@@ -42,10 +42,25 @@ function handleContactForm() {
     const form = document.getElementById('contact-form');
     form.addEventListener('submit', function(event) {
         event.preventDefault();
-        const name = document.getElementById('name').value;
-        const message = document.getElementById('message').value;
-        alert(`Thank you for your message, ${name}!\nWe have received: ${message}`);
-        form.reset();
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                alert('Thank you for your message. It has been sent successfully!');
+                form.reset();
+            } else {
+                alert('Oops! There was a problem sending your message. Please try again later.');
+            }
+        }).catch(error => {
+            alert('Oops! There was a problem sending your message. Please try again later.');
+            console.error('Error:', error);
+        });
     });
 }
 
