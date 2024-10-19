@@ -16,15 +16,16 @@ async function getVisitorInfo() {
 }
 
 // 更新总访问次数
-async function updateTotalVisits() {
-    try {
-        const response = await fetch('https://api.countapi.xyz/hit/jiandi-wang-personal-website/visits');
-        const data = await response.json();
-        document.getElementById('total-visits').textContent = data.value;
-    } catch (error) {
-        console.error('Error updating total visits:', error);
-        document.getElementById('total-visits').textContent = 'Unable to fetch count';
+function updateTotalVisits() {
+    let visits = localStorage.getItem('totalVisits');
+    if (visits === null) {
+        visits = 0;
+    } else {
+        visits = parseInt(visits);
     }
+    visits++;
+    localStorage.setItem('totalVisits', visits);
+    document.getElementById('total-visits').textContent = visits;
 }
 
 // 处理联系表单提交
