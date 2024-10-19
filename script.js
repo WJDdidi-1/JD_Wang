@@ -1,5 +1,6 @@
 let map;
 let markers = [];
+let database;
 
 // Firebase 配置
 const firebaseConfig = {
@@ -14,8 +15,20 @@ const firebaseConfig = {
 };
 
 // 初始化 Firebase
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+function initFirebase() {
+    if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        database = firebase.database();
+        console.log("Firebase initialized");
+        database.ref().once('value').then(snapshot => {
+            console.log("Connected to Firebase database");
+        }).catch(error => {
+            console.error("Error connecting to Firebase:", error);
+        });
+    } else {
+        console.error("Firebase is not defined. Make sure the Firebase scripts are loaded correctly.");
+    }
+}
 
 // 添加这些调试日志
 console.log("Firebase initialized");
@@ -139,6 +152,7 @@ function handleContactForm() {
 // 页面加载完成后执行
 window.addEventListener('load', function() {
     console.log("Page loaded, initializing...");
+    initFirebase();
     getVisitorInfo();
     handleContactForm();
 });
