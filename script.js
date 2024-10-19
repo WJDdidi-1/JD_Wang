@@ -22,6 +22,8 @@ function initFirebase() {
         console.log("Firebase initialized");
         database.ref().once('value').then(snapshot => {
             console.log("Connected to Firebase database");
+            // 在成功连接到 Firebase 后初始化其他功能
+            getVisitorInfo();
         }).catch(error => {
             console.error("Error connecting to Firebase:", error);
         });
@@ -31,12 +33,12 @@ function initFirebase() {
 }
 
 // 添加这些调试日志
-console.log("Firebase initialized");
-database.ref().once('value').then(snapshot => {
-    console.log("Connected to Firebase database");
-}).catch(error => {
-    console.error("Error connecting to Firebase:", error);
-});
+// console.log("Firebase initialized");
+// database.ref().once('value').then(snapshot => {
+//     console.log("Connected to Firebase database");
+// }).catch(error => {
+//     console.error("Error connecting to Firebase:", error);
+// });
 
 // 获取访客地理位置信息
 async function getVisitorInfo() {
@@ -153,6 +155,5 @@ function handleContactForm() {
 window.addEventListener('load', function() {
     console.log("Page loaded, initializing...");
     initFirebase();
-    getVisitorInfo();
     handleContactForm();
 });
