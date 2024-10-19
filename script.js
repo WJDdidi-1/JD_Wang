@@ -17,7 +17,9 @@ const firebaseConfig = {
 // 初始化 Firebase
 function initFirebase() {
     if (typeof firebase !== 'undefined') {
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         database = firebase.database();
         console.log("Firebase initialized");
         database.ref().once('value')
@@ -83,10 +85,14 @@ function saveVisitor(data) {
 
 // 初始化地图
 function initMap(lat, lon) {
-    map = L.map('visitor-map').setView([lat, lon], 3);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    if (!map) {
+        map = L.map('visitor-map').setView([lat, lon], 3);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+    } else {
+        map.setView([lat, lon], 3);
+    }
     
     loadVisitors();
 }
@@ -157,8 +163,12 @@ function handleContactForm() {
 }
 
 // 页面加载完成后执行
+let initialized = false;
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM loaded, initializing...");
-    initFirebase();
-    handleContactForm();
+    if (!initialized) {
+        console.log("DOM loaded, initializing...");
+        initFirebase();
+        handleContactForm();
+        initialized = true;
+    }
 });
