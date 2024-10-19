@@ -20,24 +20,11 @@ function initFirebase() {
         firebase.initializeApp(firebaseConfig);
         database = firebase.database();
         console.log("Firebase initialized");
-        database.ref().once('value').then(snapshot => {
-            console.log("Connected to Firebase database");
-            getVisitorInfo();
-        }).catch(error => {
-            console.error("Error connecting to Firebase:", error);
-        });
+        getVisitorInfo();
     } else {
         console.error("Firebase is not defined. Make sure the Firebase scripts are loaded correctly.");
     }
 }
-
-// 添加这些调试日志
-// console.log("Firebase initialized");
-// database.ref().once('value').then(snapshot => {
-//     console.log("Connected to Firebase database");
-// }).catch(error => {
-//     console.error("Error connecting to Firebase:", error);
-// });
 
 // 获取访客地理位置信息
 async function getVisitorInfo() {
@@ -52,18 +39,18 @@ async function getVisitorInfo() {
         document.getElementById('visitor-location').textContent = `${data.city}, ${data.country_name}`;
         document.getElementById('visitor-coordinates').textContent = `${data.latitude}, ${data.longitude}`;
         saveVisitor(data);
-        initMap();
+        initMap(data.latitude, data.longitude);
     } catch (error) {
         console.error('Error fetching visitor info:', error);
         document.getElementById('visitor-location').textContent = 'Unable to fetch location';
         document.getElementById('visitor-coordinates').textContent = 'N/A';
-        initMap();
+        initMap(0, 0);
     }
 }
 
 // 保存访客信息到 Firebase
 function saveVisitor(data) {
-    console.log("Saving visitor data:", data);
+    console.log("Attempting to save visitor data:", data);
     const visitorRef = database.ref('visitors').push();
     visitorRef.set({
         ip: data.ip,
@@ -80,8 +67,8 @@ function saveVisitor(data) {
 }
 
 // 初始化地图
-function initMap() {
-    map = L.map('visitor-map').setView([0, 0], 2);
+function initMap(lat, lon) {
+    map = L.map('visitor-map').setView([lat, lon], 3);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
@@ -91,7 +78,7 @@ function initMap() {
 
 // 从 Firebase 加载所有访客并在地图上标注
 function loadVisitors() {
-    console.log("Loading visitors...");
+    console.log("Attempting to load visitors...");
     database.ref('visitors').on('value', (snapshot) => {
         const visitors = snapshot.val();
         console.log("Loaded visitors:", visitors);
@@ -156,33 +143,3 @@ document.addEventListener('DOMContentLoaded', function() {
     initFirebase();
     handleContactForm();
 });
-
-// 在文件开头添加这个函数
-function loadFirebaseScripts(callback) {
-    const scripts = [
-        'https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js',
-        'https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js'
-    ];
-    let loaded = 0;
-    scripts.forEach(src => {
-        const script = document.createElement('script');
-        script.src = src;
-        script.onload = () => {
-            loaded++;
-            if (loaded === scripts.length) {
-                callback();
-            }
-        };
-        document.head.appendChild(script);
-    });
-}
-
-// 修改 window.onload
-window.onload = function() {
-    console.log("Window loaded, loading Firebase scripts...");
-    loadFirebaseScripts(() => {
-        console.log("Firebase scripts loaded, initializing...");
-        initFirebase();
-        handleContactForm();
-    });
-};
